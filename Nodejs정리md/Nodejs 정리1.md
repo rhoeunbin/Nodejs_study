@@ -191,3 +191,185 @@ app.listen(port, () => {
 })
 ```
 
+
+
+GET 방식 : params, query
+
+
+
+변수를 받는 방식 => 파라미터
+
+```js
+app.get('/user/:id', (req, res) => {
+  const q = req.params
+  console.log(q)
+})
+
+// 인터넷 주소에 http://localhost:3000/user/eunbin
+
+// 터미널에
+// Example app listening on port 3000
+// 5초지남
+// { id: 'eunbin' } id라는 변수 이름으로 받을 수 있음
+```
+
+
+
+```js
+// https://www.google.com/search(라우터)?q=sdf(q라는 변수에 sdf라는 값을 넣겠다)
+
+app.get('/user/:id', (req, res) => {
+  const q = req.query
+  console.log(q)
+    
+  res.json({'userid': q.id})
+})
+
+// http://localhost:3000/user/asdg?q=eunbin&name=eun&age=25
+// { q: 'eunbin', name: 'eun', age: '25' }
+
+app.get('/user/:id', (req, res) => {
+  const q = req.query
+  console.log(q)
+  console.log(q.q)
+  console.log(q.name)
+    
+  res.json({'userid': q.name})
+})
+
+// 터미널에서
+// { q: 'eunbin', name: 'eun', age: '25' }
+// eunbin
+// eun
+
+// 페이지에서
+// {"userid":"eun"}
+```
+
+
+
+
+
+POST 방식 : params, body
+
+```js
+app.use(express.json());
+
+app.post('/user/:id', (req, res) => {
+    const p = req.params;
+    console.log(p);
+    const b = req.body;
+    console.log(b);
+    
+    res.send({'message': 'Hello World~~'});
+})
+```
+
+
+
+### 동물소리 API 서버 만들기
+
+
+
+```js
+app.get('/sound/:name', (req, res) => {
+  // const p = req.params
+  // port.name
+  
+  // 더 간단하게 가능
+  const { name } = req.params
+  console.log(name)
+  
+  res.json({'sound': '야옹'})
+})
+
+// http://localhost:3000/sound/cat
+//{"sound":"야옹"}
+```
+
+
+
+#### API 완성
+
+```js
+app.get('/sound/:name', (req, res) => {
+  // const p = req.params
+  // port.name
+  
+  const { name } = req.params
+  console.log(name)
+
+  if (name == "dog") {
+      res.json({'sound': '멍멍'})
+  } else if (name == "cat") {
+      res.json({'sound': '야옹'})
+  } else if (name == "pig") {
+      res.json({'sound': '꿀꿀'})
+  } else {
+      res.json({'sound': '알수없음'})
+  }
+})
+```
+
+
+
+**CORS 이슈**
+
+html 파일을 요청했을 때 CORS 설정을 안 하면 차단 당하는 것
+
+**cors를 넣어야 프론트엔드에서 실행했을 때 cors 이슈가 안 생김**
+
+
+
+require cors 실행
+
+`npm install cors`
+
+```js
+const express = require('express')
+var cors = require('cors')
+const app = express()
+const port = 3000
+
+app.use(cors())
+```
+
+
+
+```html
+<!-- 프론트 엔드  -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>하이하이</title>
+</head>
+<body>
+  <h1 id="sound"></h1>
+  <input id="name" type="text">
+  <button onclick="getSound()">api요청</button>
+  <script>
+    function getSound() {    
+      const name = document.getElementById('name').value
+        fetch(`http://localhost:3000/sound/${name}`)
+        .then((response) => response.json())
+        .then((data) => {
+          console.log(data)
+          document.getElementById('sound').innerHTML = data
+        });
+      }
+  </script>
+</body>
+</html>
+
+```
+
+
+
+
+
+*💡tip*
+
+*문자열로 `로 감싼 후 ${변수}를 넣으면 문자열에 변수를 넣을 수 있음*
