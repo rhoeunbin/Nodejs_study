@@ -6,12 +6,15 @@ const express = require('express')
 const app = express()
 const bcrypt = require('bcrypt')
 const passport = require('passport')
+const flash = require('express-flash')
 const session = require('express-session')
+const methodOverride = require('method-override')
 
 const initializePassport = require('./passport-config')
 initializePassport(
   passport, 
-  email => users.find(user => user.email === email)
+  email => users.find(user => user.email === email),
+  id => users.find(user => user.id === id)
 )
 
 const users = []
@@ -19,33 +22,33 @@ const users = []
 app.set('view-engine', 'ejs')
 app.use(express.urlencoded({ extended: false }))
 app.use(flash())
-app.user(session({
+app.use(session({
   secret: process.env.SESSION_SECRET, // env에 secret ksy 넣기
   resave: false,
   saveUninitialized : false
 }))
 app.use(passport.initialize())
 app.use(passport.session())
+app.use(methodOverride('_method'))
 
-app.get('/', (req, res) => {
-  res.render('index.ejs', { name: 'eunbin'})
+app.get('/', checkAuthenticated, (req, res) => {
+  res.render('index.ejs', { name: req.user.name})
 })
 
 // 로그인 라우터
-// app.get('/login', (req, res) => {
-//   res.render('login.ejs')
-// })
+app.get('/login', checkNotAuthenticated, (req, res) => {
+  res.render('login.ejs')
+})
 
-// passport 설치 후 바꿈
-app.post('/login', passport.authenticate('local', {
+// passport 설치 후 
+app.post('/login', checkNotAuthenticated, passport.authenticate('local', {
   successRedirect: '/',
   failureRedirect: '/login',
   failureFlash: true
-
 }))
 
 // 회원가입 라우터
-app.get('/register', (req, res) => {
+app.get('/register', checkNotAuthenticated, (req, res) => {
   res.render('register.ejs')
 })
 
@@ -63,8 +66,39 @@ app.post('/register', async(req, res) => {
   } catch {
       res.redirect('/register')
   }
-  console.log(users)
+  // console.log(users)
   // req.body.name // name, email, password 다 올 수 있음
+})
+
+// 인증 체크
+function checkAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next()
+  }
+
+  res.redirect('/login')
+}
+
+function checkNotAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return res.redirect('/')
+  }
+  next()
+}
+
+// 오류나는 코드
+// app.delete('/logout', (req, res) => {
+//   req.logOut()
+//   res.redirect('/login')
+// })
+
+app.delete('/logout', (req, res, next) => {
+  req.logOut((err) => {
+    if (err) {
+      return next(err)
+    }
+    res.redirect('/login')
+  })
 })
 
 app.listen(3000)
